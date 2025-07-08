@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,90 +27,81 @@
         .swatch-clock a {
             color: white;
             text-decoration: none;
-            transition: opacity 0.3s ease;
-        }
-        .swatch-clock a:hover {
-            opacity: 0.8;
         }
         .info {
             font-size: 0.9em;
             margin-top: 15px;
             opacity: 0.8;
         }
-        .beat-info {
+        .debug {
             font-size: 0.7em;
             margin-top: 10px;
             opacity: 0.6;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <div id="swatchClock" class="swatch-clock">@000.00</div>
+    <div id="clock" class="swatch-clock">@000.00</div>
     <div class="info">Swatch Internet Time</div>
-    <div class="beat-info" id="beatInfo">Loading...</div>
+    <div id="debug" class="debug">Starting clock...</div>
     
     <script>
-        function updateClock() {
+        // Simple, direct approach
+        function getSwatchTime() {
+            var now = new Date();
+            var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            var bmt = new Date(utc + 3600000); // UTC+1
+            
+            var hours = bmt.getUTCHours();
+            var minutes = bmt.getUTCMinutes();  
+            var seconds = bmt.getUTCSeconds();
+            
+            var totalSeconds = hours * 3600 + minutes * 60 + seconds;
+            var beats = totalSeconds / 86.4;
+            
+            return beats.toFixed(2);
+        }
+        
+        function updateDisplay() {
             try {
-                const now = new Date();
+                var swatchTime = getSwatchTime();
+                var clockEl = document.getElementById('clock');
+                var debugEl = document.getElementById('debug');
                 
-                // Get UTC time components
-                const utcHours = now.getUTCHours();
-                const utcMinutes = now.getUTCMinutes();
-                const utcSeconds = now.getUTCSeconds();
-                const utcMilliseconds = now.getUTCMilliseconds();
-                
-                // Convert to Biel Mean Time (UTC+1)
-                const bmtHours = (utcHours + 1) % 24;
-                
-                // Calculate total seconds since BMT midnight
-                const totalSeconds = (bmtHours * 3600) + (utcMinutes * 60) + utcSeconds + (utcMilliseconds / 1000);
-                
-                // Convert to beats (1000 beats per day = 86400 seconds)
-                // 1 beat = 86.4 seconds
-                const beats = totalSeconds / 86.4;
-                
-                // Format to 2 decimal places
-                const formattedBeats = beats.toFixed(2);
-                
-                // Update the display
-                const clockElement = document.getElementById('swatchClock');
-                if (clockElement) {
-                    clockElement.innerHTML = '<a href="https://wiki.melonland.net/swatch_time" target="_blank">@' + formattedBeats + '</a>';
+                if (clockEl) {
+                    clockEl.innerHTML = '<a href="https://wiki.melonland.net/swatch_time" target="_blank">@' + swatchTime + '</a>';
                 }
                 
-                // Update beat info
-                const currentBeat = Math.floor(beats);
-                const beatsToMidnight = 1000 - currentBeat;
-                const beatInfoElement = document.getElementById('beatInfo');
-                if (beatInfoElement) {
-                    beatInfoElement.textContent = 'Beat ' + currentBeat + ' • ' + beatsToMidnight + ' beats until @000';
+                if (debugEl) {
+                    var now = new Date();
+                    debugEl.innerHTML = 'Updated: ' + now.toLocaleTimeString() + ' | Beats: @' + swatchTime;
                 }
                 
-            } catch (error) {
-                console.error('Clock update error:', error);
-                // Fallback display
-                document.getElementById('swatchClock').innerHTML = '@ERROR';
-                document.getElementById('beatInfo').textContent = 'Clock error - check console';
+                console.log('Swatch time updated:', swatchTime);
+                
+            } catch (e) {
+                console.error('Update failed:', e);
+                var clockEl = document.getElementById('clock');
+                if (clockEl) {
+                    clockEl.innerHTML = '@ERROR';
+                }
             }
         }
         
-        // Update immediately when page loads
-        updateClock();
+        // Start immediately
+        console.log('Clock script loaded');
+        updateDisplay();
         
-        // Update every 864ms (1 beat = 86.4 seconds, so update roughly every second for smooth display)
-        setInterval(updateClock, 864);
+        // Update every second for testing (we can make this less frequent later)
+        setInterval(updateDisplay, 1000);
         
-        // Also update every 10 seconds as a backup
-        setInterval(updateClock, 10000);
-        
-        // Debug info (remove this after testing)
-        console.log('Swatch clock initialized at:', new Date());
-        console.log('Initial update in 3 seconds...');
-        setTimeout(() => {
-            console.log('Current time:', new Date());
-            console.log('Clock should be updating now');
-        }, 3000);
+        // Alternative method - also try updating every 864ms  
+        setTimeout(function() {
+            setInterval(updateDisplay, 864);
+        }, 2000);
     </script>
 </body>
 </html>
